@@ -1,0 +1,22 @@
+<EPSON>
+	<FISCAL>
+		<Version>100</Version>
+		<CAT52>1</CAT52>
+		<EAD>1</EAD>
+		<Log>0</Log>
+		<MG_MinasLegal>0</MG_MinasLegal>
+		<PAFECF>0</PAFECF>
+		<Path>C:\Epson\InterfaceEpson\DataFiles\</Path>
+		<RJ_CupomMania>0</RJ_CupomMania>
+		<RJ_SSER_16>0</RJ_SSER_16>
+		<SINTEGRA>0</SINTEGRA>
+		<SpreadDownload>0</SpreadDownload>
+		<FlagEP>1</FlagEP>
+		<HorariodeVerao>2</HorariodeVerao>
+		<Port>1</Port>
+		<PortAuto>1</PortAuto>
+		<RZ_Automatica>0</RZ_Automatica>
+		<Speed>38400</Speed>
+		<NaoCompactarLog>0</NaoCompactarLog>
+	</FISCAL>
+</EPSON>

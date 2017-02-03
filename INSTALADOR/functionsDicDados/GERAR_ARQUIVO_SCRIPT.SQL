@@ -1,0 +1,10 @@
+CREATE OR REPLACE FUNCTION comp.gerar_arquivo_script(SIGNED_SCRIPT_p comp.t_SIGNED_SCRIPT)
+  RETURNS void AS
+$BODY$
+
+BEGIN
+
+END;
+ $BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
