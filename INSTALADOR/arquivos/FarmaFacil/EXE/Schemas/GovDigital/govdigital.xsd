@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
+            jxb:version="2.0" 
+             >
+
+<xsd:element name="GovDigital" type="GovDigitalType"/>
+
+<xsd:complexType name="GovDigitalType" >
+  <xsd:sequence>
+    <xsd:element name="emissao" type="EmissaoType" minOccurs="0" maxOccurs="1"/>
+    <xsd:element name="escrituracao" type="EscrituracaoType" minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="EmissaoType">
+  <xsd:sequence>
+    <xsd:element name="nf-e" type="NFeType" maxOccurs="unbounded"/>    
+  </xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="PessoaType">
+	<xsd:sequence>
+		<xsd:element name="documento" type="xsd:string" minOccurs="1" maxOccurs="1" nillable="false" />
+		<xsd:element name="nome" type="xsd:string" minOccurs="1" maxOccurs="1" nillable="false" />
+		<xsd:element name="cep" type="xsd:string"  maxOccurs="1" />
+		<xsd:element name="logradouro" type="xsd:string" maxOccurs="1" />
+		<xsd:element name="numero" type="xsd:string" maxOccurs="1" />
+		<xsd:element name="complemento" type="xsd:string" maxOccurs="1" />
+		<xsd:element name="bairro" type="xsd:string"  maxOccurs="1"/>
+		<xsd:element name="estado" type="xsd:string" minOccurs="1" maxOccurs="1" nillable="false" />
+		<xsd:element name="municipio" type="xsd:string" minOccurs="1" maxOccurs="1" nillable="false" />
+		<xsd:element name="pais" type="xsd:string"  maxOccurs="1"/>
+		<xsd:element name="telefone" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
+		<xsd:element name="email" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
+		<xsd:element name="inscEst" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="ItemType">
+	<xsd:sequence>
+		<!-- Não utilizar mais a atividade no item da nota fiscal, Utilizar o atributo no cabecalho. Esse atributo continuará aqui somente durante o período de migração dos clientes -->
+		<xsd:element name="atividade" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+		<xsd:element name="descricao" type="xsd:string" />
+		<!-- Não utilizar mais a aliquota no item da nota fiscal, Utilizar o atributo no cabecalho. Esse atributo continuará aqui somente durante o período de migração dos clientes  -->
+		<xsd:element name="aliquota" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+		<!-- Não utilizar mais a base de calculo no item da nota fiscal, 
+		Utilize as deducoes na nota fiscal para ajustar o calculo da base de calculo
+		Esse atributo continuará aqui somente durante o período de migração dos clientes -->
+		<xsd:element name="baseCalculo" type="xsd:decimal" minOccurs="0" />
+	    <xsd:choice>
+		    <xsd:sequence>
+	        	<xsd:element name="valorUn" type="xsd:decimal" />
+		    	<xsd:element name="quantidade" type="xsd:decimal" default="1.0" />
+	        	<xsd:element name="unidade" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+		    </xsd:sequence>
+	    	<xsd:element name="valor" type="xsd:decimal" />
+	    </xsd:choice>
+	    <!-- Não utilizar mais esse campo. Mantido no xsd para compatibilidade somente -->
+		<xsd:element name="valorIss" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="ItensType">
+	<xsd:sequence>
+		<xsd:element name="item" type="ItemType" minOccurs="1" maxOccurs="unbounded" />
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="DeducaoType">
+	<xsd:simpleContent>
+		<!-- 
+		Para arquvivos emitidos no novo padrão os codigos de deducao validos são
+		INSS
+		PIS
+		COFINS
+		IRRF
+		CSLL
+		DESCONTO CONDICIONAL
+		DESCONTO INCONDICIONAL
+		DEDUCOES
+		OUTRAS RETENCOES
+		
+		-->
+        <xsd:extension base="xsd:string">
+            <xsd:attribute name="codigo" type="xsd:string"/>
+        </xsd:extension>
+    </xsd:simpleContent>
+</xsd:complexType>
+
+<xsd:complexType name="DeducoesType">
+	<xsd:sequence>
+		<xsd:element name="deducao" type="DeducaoType" maxOccurs="unbounded"/>
+	</xsd:sequence>
+</xsd:complexType> 
+
+<xsd:complexType name="ErroType"> 
+	<xsd:simpleContent>
+        <xsd:extension base="xsd:string">
+            <xsd:attribute name="codigo" type="xsd:string"/>
+        </xsd:extension>
+    </xsd:simpleContent>
+</xsd:complexType>
+
+<xsd:complexType name="ErrosType">
+	<xsd:sequence>
+		<xsd:element name="erro" type="ErroType" minOccurs="0" maxOccurs="unbounded"/>
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="NFeType">
+  <xsd:sequence>
+  	  <!-- Input elements -->
+  	  <xsd:element name="correlacao" type="xsd:string" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="prestacao" type="xsd:date" minOccurs="1" maxOccurs="1" />
+      <xsd:choice>
+      	  <!-- tributacao será mantido temporariamente durante o período de migração do padrao Abrasf -->
+      	  <!-- De preferencia a utilizar a sequencia debaixo -->
+	      <xsd:element name="tributacao" type="xsd:string"  minOccurs="1" maxOccurs="1" />
+		  <xsd:sequence>
+		  	<!-- Novo modelo de notas fiscais. Utilize esses atributos preferencialmente ao invés do tipo de tributação -->
+		  	  <xsd:element name="exigibilidade" type="tsExigibilidadeISS" minOccurs="1" maxOccurs="1" nillable="false" />
+		  	  <xsd:element name="retido" type="tsSimNao" minOccurs="0" maxOccurs="1" nillable="false" />
+			<!-- 
+			Verificar relação de códigos de município segundo a tabela de referencia do IBGE
+			 http://www.govdigital.com.br/codigosMunicipio.action
+			 -->
+		  	  <xsd:element name="municipioIncidencia" type="tsCodigoMunicipioIbge" minOccurs="0" maxOccurs="1"  />
+		      <xsd:element name="atividade" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+		      <!-- Valor sugerido para a aliquota da nota fiscal.
+		      Esse campo se informado será validado com a atividade do cliente. Ele é editável somente no caso
+		      de incidência fora do município.
+		      Utilizar valores percentuais menores do que 1. 
+			  Exemplo: para 2,5% informar 0.025 -->
+		      <xsd:element name="aliquota" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+		  </xsd:sequence>
+      </xsd:choice>
+ 
+ 	  <!-- Os dados de prestador e regime estão disponíveis para informações no retorno da nota. Na emissão são considerados os dados do usuário logado -->
+ 	  <xsd:element name="prestador" type="PessoaType" minOccurs="0" maxOccurs="1"/>
+ 	  <xsd:element name="regime" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+
+      <!-- Esse elemento deve ser descontinuado em breve.  -->
+      <!-- Atributos da versao Abrasf -->
+	
+      
+      <!-- Fim dos atributos da nova nota -->
+ 	  <xsd:element name="tomador" type="PessoaType" minOccurs="0" maxOccurs="1"/>
+ 	  <xsd:element name="itens" type="ItensType" maxOccurs="1" minOccurs="1" />
+ 	  <xsd:element name="obs" type="xsd:string" minOccurs="0" maxOccurs="1" />
+ 	  <xsd:element name="deducoes" type="DeducoesType" minOccurs="0" maxOccurs="1"/>
+      <!-- Output elements -->
+ 	  <xsd:element name="senha" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+ 	  <xsd:element name="erros" type="ErrosType" minOccurs="0"  maxOccurs="1"/>
+ 	  <xsd:element name="numero" type="xsd:long" minOccurs="0" maxOccurs="1"/>
+ 	  <xsd:element name="serie" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+	  <xsd:element name="valorTotal" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+	  <xsd:element name="valorBase" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+	  <xsd:element name="valorImposto" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+	  <xsd:element name="valorLiquido" type="xsd:decimal" minOccurs="0" maxOccurs="1" />
+	  
+	  <!-- ATENCAO: atributos usados somente para export NAO SAO LIDOS NA IMPORTACAO -->
+	  <xsd:element name="dataCancelamento" type="xsd:date" minOccurs="0" maxOccurs="1" />
+	  <xsd:element name="motivoCancelamento" type="xsd:string" minOccurs="0" maxOccurs="1" />
+  </xsd:sequence>
+  <xsd:attribute name="id" type="xsd:ID"/>
+  
+</xsd:complexType>
+	
+	<!-- 
+		1 - Sim
+		2 - Nao  -->
+<xsd:simpleType name="tsSimNao">
+	<xsd:restriction base="xsd:byte">
+		<xsd:pattern value="1|2" />
+	</xsd:restriction>
+</xsd:simpleType>
+<!-- 
+1 - Exigivel
+2 - Não Incidencia
+3 - Isenção
+4 - Exportação
+5 - Imunidade
+6 - Exigibilidade Suspensa por Decisão Judicial
+7 - Exigibilidade Suspensa por Processo Administrativo
+ -->
+<xsd:simpleType name="tsExigibilidadeISS">
+	<xsd:restriction base="xsd:byte">
+		<xsd:pattern value="1|2|3|4|5|6|7" />
+	</xsd:restriction>
+</xsd:simpleType>
+<xsd:simpleType name="tsCodigoMunicipioIbge">
+		<xsd:restriction base="xsd:int">
+			<xsd:totalDigits value="7" />
+		</xsd:restriction>
+</xsd:simpleType>
+<xsd:complexType name="NFType">
+	<xsd:sequence>
+		<!-- Input elements -->
+		<xsd:element name="correlacao" type="xsd:string" minOccurs="0" maxOccurs="1" />
+		<xsd:element name="papel" minOccurs="1" maxOccurs="1">
+			<xsd:simpleType>
+				<xsd:restriction base="xsd:string">
+					<xsd:enumeration value="prestador" />
+					<xsd:enumeration value="tomador" />
+				</xsd:restriction>
+			</xsd:simpleType>
+		</xsd:element>
+		<xsd:element name="numero" type="xsd:long" minOccurs="1" maxOccurs="1"/>
+		<xsd:element name="serie" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+		<xsd:element name="tributacao" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+		<xsd:element name="diaPrestacao" type="xsd:int" minOccurs="1" maxOccurs="1"/>
+		<xsd:element name="contraparte" type="PessoaType" minOccurs="0" maxOccurs="1"/>
+		<xsd:element name="itens" type="ItensType" maxOccurs="1" minOccurs="1" />
+ 	  	<xsd:element name="obs" type="xsd:string" minOccurs="0" maxOccurs="1" />
+ 	  	<xsd:element name="cancelado" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+ 	  	<xsd:element name="somenteMateriais" type="xsd:boolean" minOccurs="0" maxOccurs="1" default="false" />
+		<xsd:element name="motivoCancelamento" type="xsd:string" minOccurs="0" maxOccurs="1" />
+		<!-- Output elements -->
+		<xsd:element name="senha" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+ 	 	<xsd:element name="erros" type="ErrosType" minOccurs="0"  maxOccurs="1"/>
+	</xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="EscrituracaoType">
+	<xsd:sequence>
+		<xsd:element name="nf" type="NFType" minOccurs="0" maxOccurs="unbounded"/>
+	</xsd:sequence>
+	<xsd:attribute name="mes" type="xsd:int"/>
+	<xsd:attribute name="ano" type="xsd:int"/>
+</xsd:complexType>
+
+</xsd:schema>

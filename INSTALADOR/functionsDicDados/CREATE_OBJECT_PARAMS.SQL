@@ -1,0 +1,128 @@
+CREATE OR REPLACE FUNCTION comp.create_object_params(id_object_p numeric, name_p character varying, ds_object_p text)
+ RETURNS void
+ LANGUAGE plpgsql
+AS $function$
+	DECLARE
+	COMPLETO_V VARCHAR(1600);
+	AUXILIAR_V VARCHAR(1600);
+	NOVO_AUX_V VARCHAR(1600);
+	LS_PARAM_V VARCHAR(1600);
+	PARAM_NAME_V VARCHAR(30);
+	PARAM_TYPE_V INTEGER;
+	INDICE_1_V INTEGER;
+	INDICE_2_V INTEGER;
+	IN_OUT_V INTEGER;
+	SVL_DEFAULT_V VARCHAR(50);
+	NR_ORDER_V INTEGER = 1;
+	REC RECORD;
+
+	id_object_p numeric;
+	ds_object_p text;
+	vnome_function character varying;
+BEGIN
+
+			id_object_p := $1;
+			ds_object_p := $3;
+			vnome_function := $2;
+			
+			BEGIN
+				DELETE FROM COMP.OBJECT_PARAM WHERE ID_OBJECT = ID_OBJECT_P;
+			EXCEPTION
+			WHEN OTHERS THEN
+			END;
+				
+			INDICE_1_V := POSITION('(' IN DS_OBJECT_P) + 1;
+			INDICE_2_V := POSITION('RETURNS' IN UPPER(DS_OBJECT_P));
+			COMPLETO_V := REGEXP_REPLACE(LTRIM(RTRIM(SUBSTRING(DS_OBJECT_P FROM INDICE_1_V FOR (INDICE_2_V - INDICE_1_V)))), E'[\\n\\r]+', '','g');
+			COMPLETO_V := REGEXP_REPLACE(COMPLETO_V, '[\n\r]+', '','g');
+					
+			IF (CHAR_LENGTH(COMPLETO_V) > 3) THEN
+				LOOP
+					IN_OUT_V := NULL;
+					SVL_DEFAULT_V := NULL;
+
+					BEGIN
+						IF (COALESCE(POSITION(',' IN COMPLETO_V),0) > 0) THEN
+							NOVO_AUX_V := LTRIM(SUBSTRING(COMPLETO_V FROM 1 FOR (POSITION(',' IN COMPLETO_V)-1)));
+						ELSE
+							NOVO_AUX_V := LTRIM(SUBSTRING(COMPLETO_V FROM 1 FOR (POSITION(')' IN COMPLETO_V)-1)));
+						END IF;
+					
+						IF (COALESCE(POSITION('.t_' IN LOWER(COMPLETO_V)),0) > 0) THEN
+							EXIT;
+						END IF;
+
+						IF (POSITION('OUT' IN UPPER(SUBSTRING(NOVO_AUX_V FROM 1 FOR 5))) > 0) THEN
+							IN_OUT_V := 19;
+							NOVO_AUX_V := LTRIM(SUBSTRING(NOVO_AUX_V FROM (POSITION('OUT' IN SUBSTRING(NOVO_AUX_V FROM 1 FOR 5))+4) FOR 1600));
+						END IF;
+						
+						IF (POSITION('IN' IN UPPER(SUBSTRING(NOVO_AUX_V FROM 1 FOR 4))) > 0) THEN
+							IN_OUT_V := 18;						
+							NOVO_AUX_V := LTRIM(SUBSTRING(NOVO_AUX_V FROM (POSITION('IN' IN SUBSTRING(NOVO_AUX_V FROM 1 FOR 4))+3) FOR 1600));
+						END IF;
+
+						PARAM_NAME_V := TRIM(SUBSTRING(LTRIM(NOVO_AUX_V) FROM 1 FOR (POSITION(' ' IN LTRIM(NOVO_AUX_V))-1)));
+						AUXILIAR_V := TRIM(SUBSTRING(LTRIM(NOVO_AUX_V) FROM (POSITION(' ' IN NOVO_AUX_V)+1) FOR 1600));
+
+						IF (POSITION('DEFAULT' IN UPPER(AUXILIAR_V)) > 0) THEN
+							SVL_DEFAULT_V := TRIM(SUBSTRING(AUXILIAR_V FROM (POSITION('DEFAULT' IN UPPER(AUXILIAR_V))+7) FOR 1600));
+							AUXILIAR_V 	:= TRIM(SUBSTRING(AUXILIAR_V FROM 1 FOR(POSITION('DEFAULT' IN UPPER(AUXILIAR_V))-1)));
+						END IF;
+						
+						PARAM_TYPE_V := COMP.GET_ID_ATTRIBUTE_TYPE(UPPER(AUXILIAR_V));
+
+
+						IF ((PARAM_TYPE_V = 99) OR (PARAM_TYPE_V IS NULL)) THEN
+							RAISE EXCEPTION USING MESSAGE = COMP.GET_EXPRESSION_TEXT(51)  || CHR(13) || 
+							'ID: ' || coalesce(id_object_p,0) || CHR(13) || 
+							'FUNCTION NAME: ' || coalesce(vnome_function,'') || CHR(13) ||
+							'AUXILIAR_V: ' || coalesce(AUXILIAR_V,'') || CHR(13) ||
+							'PARAM_TYPE_V: ' || coalesce(PARAM_TYPE_V,0) || CHR(13) ||
+							'COMPLETO_V: ' || coalesce(COMPLETO_V,'') || CHR(13) ||
+							'PARAM NAME: ' || coalesce(PARAM_NAME_V,'');
+						END IF;
+
+						BEGIN
+						 IF IN_OUT_V IS NULL THEN
+							IN_OUT_V := 18;
+						 END IF;
+						INSERT INTO COMP.OBJECT_PARAM 
+						(NAME,ID_OBJECT,ID_DOMAIN_VALUE_TYPE, ID_DOMAIN_VALUE_INOUT, VL_DEFAULT, NR_ORDER) 
+						VALUES 
+						(UPPER(PARAM_NAME_V),ID_OBJECT_P,PARAM_TYPE_V,IN_OUT_V, SVL_DEFAULT_V, NR_ORDER_V);
+						
+						NR_ORDER_V := NR_ORDER_V + 1;
+						
+						INSERT INTO COMP.LOG_SYNCHRONIZER
+						(SQL_TEXT) 
+						VALUES 
+						('CREATING PARAM FOR OBJECT_ID: ' || ID_OBJECT_P || ' .NAME: ' || UPPER(PARAM_NAME_V));
+
+						EXCEPTION WHEN unique_violation THEN
+						END;			
+						
+						IF (POSITION(',' IN COMPLETO_V) > 0) THEN
+							COMPLETO_V := SUBSTRING(COMPLETO_V FROM (POSITION(',' IN COMPLETO_V)+1) FOR 1600);
+						END IF;
+						
+						IF (LS_PARAM_V = COMPLETO_V) THEN
+							EXIT;
+						END IF;
+						
+					EXCEPTION WHEN OTHERS THEN
+							RAISE EXCEPTION USING MESSAGE = 
+							'ID: ' || coalesce(id_object_p,0) || CHR(13) || 
+							'FUNCTION NAME: ' || coalesce(vnome_function,'') || CHR(13) ||
+							'AUXILIAR_V: ' || coalesce(AUXILIAR_V,'') || CHR(13) ||
+							'PARAM_TYPE_V: ' || coalesce(PARAM_TYPE_V,0) || CHR(13) ||
+							'COMPLETO_V: ' || coalesce(COMPLETO_V,'') || CHR(13) ||
+							'SVL_DEFAULT_V: ' || coalesce(SVL_DEFAULT_V,'') || CHR(13) ||
+							'PARAM NAME: ' || coalesce(PARAM_NAME_V,'');
+					END;			
+					LS_PARAM_V := COMPLETO_V;
+				END LOOP;
+			END IF;
+		
+	END;
+	$function$
